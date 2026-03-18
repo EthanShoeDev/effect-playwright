@@ -1,5 +1,5 @@
 import { assert, layer } from "@effect/vitest";
-import { Chunk, Effect, Fiber, Option, Stream } from "effect";
+import { Effect, Fiber, Option, Stream } from "effect";
 import { chromium } from "playwright-core";
 import { PlaywrightBrowser } from "./browser";
 import { PlaywrightEnvironment } from "./experimental";
@@ -20,8 +20,8 @@ layer(PlaywrightEnvironment.layer(chromium))("PlaywrightCommon", (it) => {
 
       yield* page.goto("http://example.com");
 
-      const request = yield* Fiber.join(requestFiber).pipe(Effect.flatten);
-      const response = yield* Fiber.join(responseFiber).pipe(Effect.flatten);
+      const request = yield* Fiber.join(requestFiber).pipe(Effect.map(Option.getOrThrow));
+      const response = yield* Fiber.join(responseFiber).pipe(Effect.map(Option.getOrThrow));
 
       assert(request.url().includes("example.com"));
       assert(request.method() === "GET");
@@ -59,7 +59,7 @@ layer(PlaywrightEnvironment.layer(chromium))("PlaywrightCommon", (it) => {
         new Worker(URL.createObjectURL(blob));
       });
 
-      const worker = yield* Fiber.join(workerFiber).pipe(Effect.flatten);
+      const worker = yield* Fiber.join(workerFiber).pipe(Effect.map(Option.getOrThrow));
 
       assert(worker.url().startsWith("blob:"));
       const result = yield* worker.evaluate(() => 1 + 1);
@@ -80,7 +80,7 @@ layer(PlaywrightEnvironment.layer(chromium))("PlaywrightCommon", (it) => {
         setTimeout(() => alert("hello world"), 10);
       });
 
-      const dialog = yield* Fiber.join(dialogFiber).pipe(Effect.flatten);
+      const dialog = yield* Fiber.join(dialogFiber).pipe(Effect.map(Option.getOrThrow));
 
       assert(dialog.message() === "hello world");
       assert(dialog.type() === "alert");
@@ -105,7 +105,7 @@ layer(PlaywrightEnvironment.layer(chromium))("PlaywrightCommon", (it) => {
       yield* page.locator("#fileinput").click();
 
       const fileChooser = yield* Fiber.join(fileChooserFiber).pipe(
-        Effect.flatten,
+        Effect.map(Option.getOrThrow),
       );
 
       assert(fileChooser.isMultiple() === false);
@@ -129,7 +129,7 @@ layer(PlaywrightEnvironment.layer(chromium))("PlaywrightCommon", (it) => {
 
       yield* page.locator("#download").click();
 
-      const download = yield* Fiber.join(downloadFiber).pipe(Effect.flatten);
+      const download = yield* Fiber.join(downloadFiber).pipe(Effect.map(Option.getOrThrow));
 
       assert(download.suggestedFilename() === "test.txt");
       const url = download.url();
@@ -138,7 +138,7 @@ layer(PlaywrightEnvironment.layer(chromium))("PlaywrightCommon", (it) => {
       const text = yield* download.stream.pipe(
         Stream.decodeText(),
         Stream.runCollect,
-        Effect.map(Chunk.join("")),
+        Effect.map((chunks) => chunks.join("")),
       );
 
       assert.strictEqual(text, "hello world");

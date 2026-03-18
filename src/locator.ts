@@ -695,11 +695,11 @@ export class PlaywrightLocator extends ServiceMap.Service<PlaywrightLocator, Pla
       ariaSnapshot: (options) => use((l) => l.ariaSnapshot(options)),
       boundingBox: (options) =>
         use((l) => l.boundingBox(options)).pipe(
-          Effect.map(Option.fromNullable),
+          Effect.map(Option.fromNullOr),
         ),
       describe: (description) =>
         PlaywrightLocator.make(locator.describe(description)),
-      description: () => Option.fromNullable(locator.description()),
+      description: () => Option.fromNullOr(locator.description()),
       count: use((l) => l.count()),
       first: () => PlaywrightLocator.make(locator.first()),
       last: () => PlaywrightLocator.make(locator.last()),
@@ -769,7 +769,7 @@ export class PlaywrightLocator extends ServiceMap.Service<PlaywrightLocator, Pla
       ) => use((l) => l.evaluateHandle(pageFunction, arg as Arg)),
       elementHandle: (options) =>
         use((l) => l.elementHandle(options)).pipe(
-          Effect.map(Option.fromNullable),
+          Effect.map(Option.fromNullOr),
         ),
       elementHandles: () =>
         use(

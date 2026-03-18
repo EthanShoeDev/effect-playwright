@@ -1,5 +1,5 @@
 import { layer } from "@effect/vitest";
-import { Effect, Stream } from "effect";
+import { Effect, Fiber, Stream } from "effect";
 import { chromium } from "playwright-core";
 import { PlaywrightBrowser } from "./browser";
 import { PlaywrightEnvironment } from "./experimental";
@@ -20,7 +20,7 @@ layer(PlaywrightEnvironment.layer(chromium))("eventStream", (it) => {
       yield* page.close;
 
       // Wait for the stream to complete
-      yield* fiber.await;
+      yield* Fiber.await(fiber);
 
       // test will timeout if the stream does not complete
     }).pipe(PlaywrightEnvironment.withBrowser),
@@ -41,7 +41,7 @@ layer(PlaywrightEnvironment.layer(chromium))("eventStream", (it) => {
       yield* browser.close;
 
       // Wait for the stream to complete
-      yield* fiber.await;
+      yield* Fiber.await(fiber);
 
       // test will timeout if the stream does not complete
     }).pipe(PlaywrightEnvironment.withBrowser),

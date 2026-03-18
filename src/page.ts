@@ -1,4 +1,4 @@
-import { Effect, identity, Option, ServiceMap, Stream } from "effect";
+import { Effect, identity, Option, Queue, ServiceMap, Stream } from "effect";
 import type {
   ConsoleMessage,
   Dialog,
@@ -794,7 +794,7 @@ export class PlaywrightPage extends ServiceMap.Service<PlaywrightPage, Playwrigh
         use((p) => p.setExtraHTTPHeaders(headers)),
       setViewportSize: (viewportSize) =>
         use((p) => p.setViewportSize(viewportSize)),
-      viewportSize: () => Option.fromNullable(page.viewportSize()),
+      viewportSize: () => Option.fromNullOr(page.viewportSize()),
       waitForURL: (url, options) => use((p) => p.waitForURL(url, options)),
       waitForLoadState: (state, options) =>
         use((p) => p.waitForLoadState(state, options)),
@@ -844,7 +844,7 @@ export class PlaywrightPage extends ServiceMap.Service<PlaywrightPage, Playwrigh
       url: () => page.url(),
       context: () => PlaywrightBrowserContext.make(page.context()),
       opener: use((p) => p.opener()).pipe(
-        Effect.map(Option.fromNullable),
+        Effect.map(Option.fromNullOr),
         Effect.map(Option.map(PlaywrightPage.make)),
       ),
       consoleMessages: use((p) => p.consoleMessages()),
@@ -852,7 +852,7 @@ export class PlaywrightPage extends ServiceMap.Service<PlaywrightPage, Playwrigh
       workers: () => page.workers().map(PlaywrightWorker.make),
 
       frame: (frameSelector) =>
-        Option.fromNullable(page.frame(frameSelector)).pipe(
+        Option.fromNullOr(page.frame(frameSelector)).pipe(
           Option.map(PlaywrightFrame.make),
         ),
       frames: use((p) => Promise.resolve(p.frames().map(PlaywrightFrame.make))),
@@ -860,12 +860,12 @@ export class PlaywrightPage extends ServiceMap.Service<PlaywrightPage, Playwrigh
       reload: use((p) => p.reload()),
       goBack: (options) =>
         use((p) => p.goBack(options)).pipe(
-          Effect.map(Option.fromNullable),
+          Effect.map(Option.fromNullOr),
           Effect.map(Option.map(PlaywrightResponse.make)),
         ),
       goForward: (options) =>
         use((p) => p.goForward(options)).pipe(
-          Effect.map(Option.fromNullable),
+          Effect.map(Option.fromNullOr),
           Effect.map(Option.map(PlaywrightResponse.make)),
         ),
       requestGC: use((p) => p.requestGC()),
@@ -880,16 +880,19 @@ export class PlaywrightPage extends ServiceMap.Service<PlaywrightPage, Playwrigh
       click: (selector, options) => use((p) => p.click(selector, options)),
       emulateMedia: (options) => use((p) => p.emulateMedia(options)),
       eventStream: <K extends keyof PageEvents>(event: K) =>
-        Stream.asyncPush<PageEvents[K]>((emit) =>
+        Stream.callback<PageEvents[K]>((queue) =>
           Effect.acquireRelease(
             Effect.sync(() => {
-              page.on(event, emit.single);
-              page.once("close", emit.end);
+              const handler = (data: PageEvents[K]) => { Queue.offerUnsafe(queue, data); };
+              const endHandler = () => { Queue.endUnsafe(queue); };
+              page.on(event, handler);
+              page.once("close", endHandler);
+              return { handler, endHandler };
             }),
-            () =>
+            ({ handler, endHandler }) =>
               Effect.sync(() => {
-                page.off(event, emit.single);
-                page.off("close", emit.end);
+                page.off(event, handler);
+                page.off("close", endHandler);
               }),
           ),
         ).pipe(

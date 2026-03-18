@@ -1,5 +1,5 @@
 import { assert, layer } from "@effect/vitest";
-import { Chunk, Effect, Fiber, Stream } from "effect";
+import { Effect, Fiber, Stream } from "effect";
 import { chromium } from "playwright-core";
 import { Playwright } from "../index";
 import * as BrowserUtils from "./browser-utils";
@@ -82,7 +82,7 @@ layer(Playwright.layer)("BrowserUtils", (it) => {
         yield* browser.close;
 
         const events = yield* Fiber.join(eventFiber);
-        assert.strictEqual(Chunk.size(events), 4);
+        assert.strictEqual(events.length, 4);
       }),
   );
 
@@ -99,7 +99,7 @@ layer(Playwright.layer)("BrowserUtils", (it) => {
       yield* page.goto("https://example.com");
 
       const events = yield* Fiber.join(fiber);
-      assert.strictEqual(Chunk.size(events), 1);
+      assert.strictEqual(events.length, 1);
     }),
   );
 });

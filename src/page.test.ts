@@ -249,7 +249,7 @@ layer(PlaywrightEnvironment.layer(chromium))("PlaywrightPage", (it) => {
 
       yield* page.locator("#fileinput").click();
 
-      const results = yield* Fiber.join(fileChooser).pipe(Effect.flatten);
+      const results = yield* Fiber.join(fileChooser).pipe(Effect.map(Option.getOrThrow));
 
       assert(results.isMultiple() === false, "isMultiple should be false");
     }).pipe(PlaywrightEnvironment.withBrowser),

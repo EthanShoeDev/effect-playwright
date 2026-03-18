@@ -1,4 +1,4 @@
-import { Effect, ServiceMap, Stream } from "effect";
+import { Effect, Queue, ServiceMap, Stream } from "effect";
 import type { Scope } from "effect/Scope";
 import type { Browser, BrowserType, chromium } from "playwright-core";
 import { PlaywrightBrowserContext } from "./browser-context";
@@ -133,22 +133,25 @@ export class PlaywrightBrowser extends ServiceMap.Service<PlaywrightBrowser, Pla
           use((browser) =>
             browser.newContext(options).then(PlaywrightBrowserContext.make),
           ),
-          (context) => context.close.pipe(Effect.ignoreLogged),
+          (context) => context.close.pipe(Effect.ignore),
         ),
       browserType: () => browser.browserType(),
       version: () => browser.version(),
       isConnected: () => browser.isConnected(),
       eventStream: <K extends keyof BrowserEvents>(event: K) =>
-        Stream.asyncPush<BrowserEvents[K]>((emit) =>
+        Stream.callback<BrowserEvents[K]>((queue) =>
           Effect.acquireRelease(
             Effect.sync(() => {
-              browser.on(event, emit.single);
-              browser.once("disconnected", emit.end);
+              const handler = (data: BrowserEvents[K]) => { Queue.offerUnsafe(queue, data); };
+              const endHandler = () => { Queue.endUnsafe(queue); };
+              browser.on(event, handler);
+              browser.once("disconnected", endHandler);
+              return { handler, endHandler };
             }),
-            () =>
+            ({ handler, endHandler }) =>
               Effect.sync(() => {
-                browser.off(event, emit.single);
-                browser.off("disconnected", emit.end);
+                browser.off(event, handler);
+                browser.off("disconnected", endHandler);
               }),
           ),
         ).pipe(

@@ -1,5 +1,5 @@
 import { assert, layer } from "@effect/vitest";
-import { Effect } from "effect";
+import { Effect, Option } from "effect";
 import { chromium } from "playwright-core";
 import { PlaywrightBrowser } from "./browser";
 import { PlaywrightEnvironment } from "./experimental";
@@ -30,7 +30,7 @@ layer(PlaywrightEnvironment.layer(chromium))("PlaywrightFrame", (it) => {
         Effect.succeed(f.name() === "test-frame");
 
       const frame = yield* Effect.findFirst(frames, isTestFrame).pipe(
-        Effect.flatten,
+        Effect.map(Option.getOrThrow),
         Effect.retry({
           times: 3,
         }),

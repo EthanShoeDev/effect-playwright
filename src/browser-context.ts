@@ -1,4 +1,4 @@
-import { Effect, identity, ServiceMap, Stream } from "effect";
+import { Effect, identity, Queue, ServiceMap, Stream } from "effect";
 import type {
   BrowserContext,
   ConsoleMessage,
@@ -145,16 +145,19 @@ export class PlaywrightBrowserContext extends ServiceMap.Service<PlaywrightBrows
       close: use((c) => c.close()),
       addInitScript: (script, arg) => use((c) => c.addInitScript(script, arg)),
       eventStream: <K extends keyof BrowserContextEvents>(event: K) =>
-        Stream.asyncPush<BrowserContextEvents[K]>((emit) =>
+        Stream.callback<BrowserContextEvents[K]>((queue) =>
           Effect.acquireRelease(
             Effect.sync(() => {
-              context.on(event, emit.single);
-              context.once("close", emit.end);
+              const handler = (data: BrowserContextEvents[K]) => { Queue.offerUnsafe(queue, data); };
+              const endHandler = () => { Queue.endUnsafe(queue); };
+              context.on(event, handler);
+              context.once("close", endHandler);
+              return { handler, endHandler };
             }),
-            () =>
+            ({ handler, endHandler }) =>
               Effect.sync(() => {
-                context.off(event, emit.single);
-                context.off("close", emit.end);
+                context.off(event, handler);
+                context.off("close", endHandler);
               }),
           ),
         ).pipe(

@@ -57,14 +57,12 @@ export class PlaywrightEnvironment extends ServiceMap.Service<
 export const layer = (browser: BrowserType, launchOptions?: LaunchOptions) => {
   return Layer.effect(
     PlaywrightEnvironment,
-    Playwright.pipe(
-      Effect.map((playwright) => {
-        return PlaywrightEnvironment.of({
-          browser: playwright.launchScoped(browser, launchOptions),
-        });
-      }),
-      Effect.provide(Playwright.layer),
-    ),
+    Effect.gen(function* () {
+      const playwright = yield* Playwright;
+      return PlaywrightEnvironment.of({
+        browser: playwright.launchScoped(browser, launchOptions),
+      });
+    }).pipe(Effect.provide(Playwright.layer)),
   );
 };
 
@@ -92,9 +90,10 @@ export const layer = (browser: BrowserType, launchOptions?: LaunchOptions) => {
  * @category util
  */
 export const withBrowser = Effect.provide(
-  PlaywrightEnvironment.pipe(
-    Effect.map((e) => e.browser),
-    Effect.flatten,
-    Layer.scoped(PlaywrightBrowser),
+  Layer.effect(PlaywrightBrowser)(
+    Effect.gen(function* () {
+      const env = yield* PlaywrightEnvironment;
+      return yield* env.browser;
+    }),
   ),
 );
