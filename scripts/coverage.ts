@@ -1,6 +1,5 @@
 import { Command } from "@effect/cli";
-import { FileSystem, Path } from "@effect/platform";
-import { NodeContext, NodeRuntime } from "@effect/platform-node";
+import { FileSystem, NodeContext, NodeRuntime, Path } from "effect";
 import { Console, Effect } from "effect";
 import { type JSDocableNode, Project } from "ts-morph";
 

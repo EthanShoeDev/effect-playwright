@@ -1,4 +1,4 @@
-import { Context, type Effect } from "effect";
+import { type Effect, ServiceMap } from "effect";
 import type { Touchscreen } from "playwright-core";
 import type { PlaywrightError } from "./errors";
 import { useHelper } from "./utils";
@@ -25,9 +25,9 @@ export interface PlaywrightTouchscreenService {
  * @category tag
  * @since 0.3.0
  */
-export class PlaywrightTouchscreen extends Context.Tag(
+export class PlaywrightTouchscreen extends ServiceMap.Service<PlaywrightTouchscreen, PlaywrightTouchscreenService>()(
   "effect-playwright/PlaywrightTouchscreen",
-)<PlaywrightTouchscreen, PlaywrightTouchscreenService>() {
+) {
   /**
    * Creates a `PlaywrightTouchscreen` from a Playwright `Touchscreen` instance.
    *

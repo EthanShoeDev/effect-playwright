@@ -1,4 +1,4 @@
-import { Context, Effect, Layer } from "effect";
+import { Effect, Layer, ServiceMap } from "effect";
 import type { Scope } from "effect/Scope";
 import { Playwright, PlaywrightBrowser } from "effect-playwright";
 import type { BrowserType, LaunchOptions } from "playwright-core";
@@ -15,9 +15,7 @@ import type { PlaywrightError } from "../errors";
  * @since 0.1.0
  * @category tag
  */
-export class PlaywrightEnvironment extends Context.Tag(
-  "effect-playwright/experimental/PlaywrightEnvironment",
-)<
+export class PlaywrightEnvironment extends ServiceMap.Service<
   PlaywrightEnvironment,
   {
     browser: Effect.Effect<
@@ -26,7 +24,9 @@ export class PlaywrightEnvironment extends Context.Tag(
       Scope
     >;
   }
->() {}
+>()(
+  "effect-playwright/experimental/PlaywrightEnvironment",
+) {}
 
 /**
  * Creates a Layer that initializes the `PlaywrightEnvironment`.

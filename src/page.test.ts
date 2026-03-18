@@ -245,7 +245,7 @@ layer(PlaywrightEnvironment.layer(chromium))("PlaywrightPage", (it) => {
 
       const fileChooser = yield* page
         .eventStream("filechooser")
-        .pipe(Stream.runHead, Effect.fork);
+        .pipe(Stream.runHead, Effect.forkChild);
 
       yield* page.locator("#fileinput").click();
 
@@ -583,7 +583,7 @@ layer(PlaywrightEnvironment.layer(chromium))("PlaywrightPage", (it) => {
 
       const errorFiber = yield* page
         .eventStream("pageerror")
-        .pipe(Stream.runHead, Effect.fork);
+        .pipe(Stream.runHead, Effect.forkChild);
 
       yield* page.evaluate(() => {
         setTimeout(() => {
@@ -606,7 +606,7 @@ layer(PlaywrightEnvironment.layer(chromium))("PlaywrightPage", (it) => {
 
       const errorFiber = yield* page
         .eventStream("pageerror")
-        .pipe(Stream.runHead, Effect.fork);
+        .pipe(Stream.runHead, Effect.forkChild);
 
       yield* page.evaluate(() => {
         setTimeout(() => {
@@ -819,7 +819,7 @@ layer(PlaywrightEnvironment.layer(chromium))("PlaywrightPage", (it) => {
 
       const popupFiber = yield* page
         .eventStream("popup")
-        .pipe(Stream.runHead, Effect.fork);
+        .pipe(Stream.runHead, Effect.forkChild);
 
       yield* page.evaluate(() => {
         window.open("about:blank");
@@ -911,7 +911,7 @@ layer(PlaywrightEnvironment.layer(chromium))("PlaywrightPage", (it) => {
 
       const workerFiber = yield* page
         .eventStream("worker")
-        .pipe(Stream.runHead, Effect.fork);
+        .pipe(Stream.runHead, Effect.forkChild);
 
       yield* page.goto(
         "data:text/html,<script>new Worker(URL.createObjectURL(new Blob(['console.log(\"worker\")'], {type: 'application/javascript'})));</script>",

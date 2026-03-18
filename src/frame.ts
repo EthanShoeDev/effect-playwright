@@ -1,4 +1,4 @@
-import { Context, type Effect } from "effect";
+import { type Effect, ServiceMap } from "effect";
 import type { Frame } from "playwright-core";
 import type { PlaywrightError } from "./errors";
 import { PlaywrightLocator } from "./locator";
@@ -161,9 +161,9 @@ export interface PlaywrightFrameService {
  * @category tag
  * @since 0.1.2
  */
-export class PlaywrightFrame extends Context.Tag(
+export class PlaywrightFrame extends ServiceMap.Service<PlaywrightFrame, PlaywrightFrameService>()(
   "effect-playwright/PlaywrightFrame",
-)<PlaywrightFrame, PlaywrightFrameService>() {
+) {
   /**
    * Creates a `PlaywrightFrame` from a Playwright `Frame` instance.
    *

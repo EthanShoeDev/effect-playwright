@@ -1,4 +1,4 @@
-import { Context, Effect, Stream } from "effect";
+import { Effect, ServiceMap, Stream } from "effect";
 import type { Scope } from "effect/Scope";
 import type { Browser, BrowserType, chromium } from "playwright-core";
 import { PlaywrightBrowserContext } from "./browser-context";
@@ -114,9 +114,9 @@ export interface PlaywrightBrowserService {
 /**
  * @category tag
  */
-export class PlaywrightBrowser extends Context.Tag(
+export class PlaywrightBrowser extends ServiceMap.Service<PlaywrightBrowser, PlaywrightBrowserService>()(
   "effect-playwright/PlaywrightBrowser",
-)<PlaywrightBrowser, PlaywrightBrowserService>() {
+) {
   /**
    * @category constructor
    */

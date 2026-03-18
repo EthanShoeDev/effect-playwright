@@ -151,7 +151,7 @@ layer(Playwright.layer)("PlaywrightBrowser", (it) => {
 
       const eventsFiber = yield* browser
         .eventStream("disconnected")
-        .pipe(Stream.runCollect, Effect.fork);
+        .pipe(Stream.runCollect, Effect.forkChild);
 
       yield* browser.close;
       const events = yield* Fiber.join(eventsFiber);

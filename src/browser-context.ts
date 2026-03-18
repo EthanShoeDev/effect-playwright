@@ -1,4 +1,4 @@
-import { Context, Effect, identity, Stream } from "effect";
+import { Effect, identity, ServiceMap, Stream } from "effect";
 import type {
   BrowserContext,
   ConsoleMessage,
@@ -125,9 +125,9 @@ export interface PlaywrightBrowserContextService {
 /**
  * @category tag
  */
-export class PlaywrightBrowserContext extends Context.Tag(
+export class PlaywrightBrowserContext extends ServiceMap.Service<PlaywrightBrowserContext, PlaywrightBrowserContextService>()(
   "effect-playwright/PlaywrightBrowserContext",
-)<PlaywrightBrowserContext, PlaywrightBrowserContextService>() {
+) {
   /**
    * Creates a `PlaywrightBrowserContext` from a Playwright `BrowserContext` instance.
    *

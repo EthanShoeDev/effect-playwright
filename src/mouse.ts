@@ -1,4 +1,4 @@
-import { Context, type Effect } from "effect";
+import { type Effect, ServiceMap } from "effect";
 import type { Mouse } from "playwright-core";
 import type { PlaywrightError } from "./errors";
 import { useHelper } from "./utils";
@@ -74,9 +74,9 @@ export interface PlaywrightMouseService {
 /**
  * @category tag
  */
-export class PlaywrightMouse extends Context.Tag(
+export class PlaywrightMouse extends ServiceMap.Service<PlaywrightMouse, PlaywrightMouseService>()(
   "effect-playwright/PlaywrightMouse",
-)<PlaywrightMouse, PlaywrightMouseService>() {
+) {
   /**
    * Creates a `PlaywrightMouse` from a Playwright `Mouse` instance.
    *

@@ -1,4 +1,4 @@
-import { Context, Effect, Layer, type Scope } from "effect";
+import { Effect, Layer, type Scope, ServiceMap } from "effect";
 import {
   type BrowserType,
   type ConnectOverCDPOptions,
@@ -289,9 +289,9 @@ const launchPersistentContext: (
  * @category tag
  * @since 0.1.0
  */
-export class Playwright extends Context.Tag(
+export class Playwright extends ServiceMap.Service<Playwright, PlaywrightService>()(
   "effect-playwright/index/Playwright",
-)<Playwright, PlaywrightService>() {
+) {
   /**
    * @category layer
    */

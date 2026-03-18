@@ -1,4 +1,4 @@
-import { Array, Context, Effect, Match, Option, Predicate } from "effect";
+import { Array, Effect, Match, Option, Predicate, ServiceMap } from "effect";
 import type { ElementHandle, JSHandle, Locator } from "playwright-core";
 import type { PlaywrightError } from "./errors";
 import {
@@ -655,9 +655,9 @@ export interface PlaywrightLocatorService {
  * @since 0.1.0
  * @category tag
  */
-export class PlaywrightLocator extends Context.Tag(
+export class PlaywrightLocator extends ServiceMap.Service<PlaywrightLocator, PlaywrightLocatorService>()(
   "effect-playwright/PlaywrightLocator",
-)<PlaywrightLocator, PlaywrightLocatorService>() {
+) {
   /**
    * Creates a `PlaywrightLocator` from a Playwright `Locator` instance. This is mostly for internal use.
    * But you could use this if you have used `use` or similar to wrap the locator.

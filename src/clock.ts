@@ -1,4 +1,4 @@
-import { Context, type Effect } from "effect";
+import { type Effect, ServiceMap } from "effect";
 import type { Clock } from "playwright-core";
 import type { PlaywrightError } from "./errors";
 import { useHelper } from "./utils";
@@ -97,9 +97,9 @@ export interface PlaywrightClockService {
  * @since 0.1.0
  * @category tag
  */
-export class PlaywrightClock extends Context.Tag(
+export class PlaywrightClock extends ServiceMap.Service<PlaywrightClock, PlaywrightClockService>()(
   "effect-playwright/PlaywrightClock",
-)<PlaywrightClock, PlaywrightClockService>() {
+) {
   /**
    * Creates a `PlaywrightClock` from a Playwright `Clock` instance.
    *

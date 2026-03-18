@@ -12,11 +12,11 @@ layer(PlaywrightEnvironment.layer(chromium))("PlaywrightCommon", (it) => {
 
       const requestFiber = yield* page
         .eventStream("request")
-        .pipe(Stream.runHead, Effect.fork);
+        .pipe(Stream.runHead, Effect.forkChild);
 
       const responseFiber = yield* page
         .eventStream("response")
-        .pipe(Stream.runHead, Effect.fork);
+        .pipe(Stream.runHead, Effect.forkChild);
 
       yield* page.goto("http://example.com");
 
@@ -50,7 +50,7 @@ layer(PlaywrightEnvironment.layer(chromium))("PlaywrightCommon", (it) => {
 
       const workerFiber = yield* page
         .eventStream("worker")
-        .pipe(Stream.runHead, Effect.fork);
+        .pipe(Stream.runHead, Effect.forkChild);
 
       yield* page.evaluate(() => {
         const blob = new Blob(['console.log("worker")'], {
@@ -74,7 +74,7 @@ layer(PlaywrightEnvironment.layer(chromium))("PlaywrightCommon", (it) => {
 
       const dialogFiber = yield* page
         .eventStream("dialog")
-        .pipe(Stream.runHead, Effect.fork);
+        .pipe(Stream.runHead, Effect.forkChild);
 
       yield* page.evaluate(() => {
         setTimeout(() => alert("hello world"), 10);
@@ -100,7 +100,7 @@ layer(PlaywrightEnvironment.layer(chromium))("PlaywrightCommon", (it) => {
 
       const fileChooserFiber = yield* page
         .eventStream("filechooser")
-        .pipe(Stream.runHead, Effect.fork);
+        .pipe(Stream.runHead, Effect.forkChild);
 
       yield* page.locator("#fileinput").click();
 
@@ -125,7 +125,7 @@ layer(PlaywrightEnvironment.layer(chromium))("PlaywrightCommon", (it) => {
 
       const downloadFiber = yield* page
         .eventStream("download")
-        .pipe(Stream.runHead, Effect.fork);
+        .pipe(Stream.runHead, Effect.forkChild);
 
       yield* page.locator("#download").click();
 

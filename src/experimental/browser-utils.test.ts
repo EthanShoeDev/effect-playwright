@@ -52,7 +52,7 @@ layer(Playwright.layer)("BrowserUtils", (it) => {
 
         // Start the event stream
         const stream = BrowserUtils.allFrameNavigatedEventStream(browser);
-        const eventFiber = yield* stream.pipe(Stream.runCollect, Effect.fork);
+        const eventFiber = yield* stream.pipe(Stream.runCollect, Effect.forkChild);
 
         // 1. Navigate existing page
         yield* page1.goto(
@@ -94,7 +94,7 @@ layer(Playwright.layer)("BrowserUtils", (it) => {
 
       const fiber = yield* BrowserUtils.allFrameNavigatedEventStream(
         browser,
-      ).pipe(Stream.take(1), Stream.runCollect, Effect.fork);
+      ).pipe(Stream.take(1), Stream.runCollect, Effect.forkChild);
 
       yield* page.goto("https://example.com");
 

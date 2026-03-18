@@ -1,4 +1,4 @@
-import { Context, Effect, identity, Option, Runtime, Stream } from "effect";
+import { Effect, identity, Option, ServiceMap, Stream } from "effect";
 import type {
   ConsoleMessage,
   Dialog,
@@ -291,14 +291,14 @@ export interface PlaywrightPageService {
    *
    * @example
    * ```ts
-   * import { Context, Effect } from "effect";
+   * import { Effect, ServiceMap } from "effect";
    * import { PlaywrightBrowser } from "effect-playwright/browser";
    *
    * // A custom Database service used in your Effect application
-   * class Database extends Context.Tag("Database")<
+   * class Database extends ServiceMap.Service<
    *   Database,
    *   { readonly insertProduct: (name: string, price: number) => Effect.Effect<void> }
-   * >() {}
+   * >()("Database") {}
    *
    * const program = Effect.gen(function* () {
    *   const browser = yield* PlaywrightBrowser;
@@ -768,9 +768,9 @@ export interface PlaywrightPageService {
 /**
  * @category tag
  */
-export class PlaywrightPage extends Context.Tag(
+export class PlaywrightPage extends ServiceMap.Service<PlaywrightPage, PlaywrightPageService>()(
   "effect-playwright/PlaywrightPage",
-)<PlaywrightPage, PlaywrightPageService>() {
+) {
   /**
    * Creates a `PlaywrightPage` from a Playwright `Page` instance.
    *
@@ -809,8 +809,8 @@ export class PlaywrightPage extends Context.Tag(
         name: string,
         effectFn: (...args: Args) => Effect.Effect<A, E, R>,
       ) =>
-        Effect.runtime<R>().pipe(
-          Effect.map((r) => Runtime.runPromise(r)),
+        Effect.services<R>().pipe(
+          Effect.map((services) => Effect.runPromiseWith(services)),
           Effect.flatMap((runPromise) =>
             use((p) =>
               p.exposeFunction(name, (...args: Args) =>
@@ -820,8 +820,8 @@ export class PlaywrightPage extends Context.Tag(
           ),
         ),
       exposeEffect: <A, E, R>(name: string, effectFn: Effect.Effect<A, E, R>) =>
-        Effect.runtime<R>().pipe(
-          Effect.map((r) => Runtime.runPromise(r)),
+        Effect.services<R>().pipe(
+          Effect.map((services) => Effect.runPromiseWith(services)),
           Effect.flatMap((runPromise) =>
             use((p) => p.exposeFunction(name, () => runPromise(effectFn))),
           ),

@@ -1,4 +1,4 @@
-import { Context, type Effect } from "effect";
+import { type Effect, ServiceMap } from "effect";
 import type { Keyboard } from "playwright-core";
 import type { PlaywrightError } from "./errors";
 import { useHelper } from "./utils";
@@ -60,9 +60,9 @@ export interface PlaywrightKeyboardService {
 /**
  * @category tag
  */
-export class PlaywrightKeyboard extends Context.Tag(
+export class PlaywrightKeyboard extends ServiceMap.Service<PlaywrightKeyboard, PlaywrightKeyboardService>()(
   "effect-playwright/PlaywrightKeyboard",
-)<PlaywrightKeyboard, PlaywrightKeyboardService>() {
+) {
   /**
    * Creates a `PlaywrightKeyboard` from a Playwright `Keyboard` instance.
    *

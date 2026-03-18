@@ -14,7 +14,7 @@ layer(PlaywrightEnvironment.layer(chromium))("eventStream", (it) => {
       const stream = page.eventStream("console");
 
       // Run the stream in the background
-      const fiber = yield* Stream.runCollect(stream).pipe(Effect.fork);
+      const fiber = yield* Stream.runCollect(stream).pipe(Effect.forkChild);
 
       // Close the page
       yield* page.close;
@@ -35,7 +35,7 @@ layer(PlaywrightEnvironment.layer(chromium))("eventStream", (it) => {
       const stream = page.eventStream("console");
 
       // Run the stream in the background
-      const fiber = yield* Stream.runCollect(stream).pipe(Effect.fork);
+      const fiber = yield* Stream.runCollect(stream).pipe(Effect.forkChild);
 
       // Close the browser
       yield* browser.close;

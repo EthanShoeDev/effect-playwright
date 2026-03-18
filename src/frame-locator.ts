@@ -1,4 +1,4 @@
-import { Context, Match, Predicate } from "effect";
+import { Match, Predicate, ServiceMap } from "effect";
 import type { FrameLocator, Locator } from "playwright-core";
 import { PlaywrightLocator, type PlaywrightLocatorService } from "./locator";
 
@@ -148,9 +148,9 @@ export interface PlaywrightFrameLocatorService {
  * @since 0.1.0
  * @category tag
  */
-export class PlaywrightFrameLocator extends Context.Tag(
+export class PlaywrightFrameLocator extends ServiceMap.Service<PlaywrightFrameLocator, PlaywrightFrameLocatorService>()(
   "effect-playwright/PlaywrightFrameLocator",
-)<PlaywrightFrameLocator, PlaywrightFrameLocatorService>() {
+) {
   /**
    * Creates a `PlaywrightFrameLocator` from a Playwright `FrameLocator` instance.
    *
