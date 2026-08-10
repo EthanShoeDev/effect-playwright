@@ -47,15 +47,15 @@
     "playwright-core": "^1.60.0"
   },
   "peerDependencies": {
-    "effect": "^4.0.0-beta.70"
+    "effect": "^4.0.0-beta.101"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.14",
     "@effect/language-service": "0.85.1",
-    "@effect/platform-node": "4.0.0-beta.70",
-    "@effect/vitest": "4.0.0-beta.70",
+    "@effect/platform-node": "4.0.0-beta.101",
+    "@effect/vitest": "4.0.0-beta.101",
     "@types/node": "^25.6.1",
-    "effect": "4.0.0-beta.70",
+    "effect": "4.0.0-beta.101",
     "playwright": "^1.60.0",
     "ts-morph": "^28.0.0",
     "tsdown": "0.22.0",
