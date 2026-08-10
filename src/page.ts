@@ -1,4 +1,12 @@
-import { Context, Effect, identity, Option, Runtime, Stream } from "effect";
+import {
+  Array,
+  Context,
+  Effect,
+  identity,
+  Option,
+  Queue,
+  Stream,
+} from "effect";
 import type {
   ConsoleMessage,
   Dialog,
@@ -31,6 +39,10 @@ import { PlaywrightKeyboard, type PlaywrightKeyboardService } from "./keyboard";
 import { PlaywrightLocator } from "./locator";
 import { PlaywrightMouse, type PlaywrightMouseService } from "./mouse";
 import type { PageFunction, PatchedEvents } from "./playwright-types";
+import {
+  PlaywrightScreencast,
+  type PlaywrightScreencastService,
+} from "./screencast";
 import {
   PlaywrightTouchscreen,
   type PlaywrightTouchscreenService,
@@ -114,6 +126,12 @@ export interface PlaywrightPageService {
    */
   readonly touchscreen: PlaywrightTouchscreenService;
   /**
+   * Access the screencast.
+   *
+   * @since 0.5.0
+   */
+  readonly screencast: PlaywrightScreencastService;
+  /**
    * Navigates the page to the given URL.
    *
    * @example
@@ -138,6 +156,15 @@ export interface PlaywrightPageService {
   readonly setContent: (
     html: string,
     options?: Parameters<Page["setContent"]>[1],
+  ) => Effect.Effect<void, PlaywrightError>;
+  /**
+   * Waits for the given timeout in milliseconds.
+   *
+   * @see {@link Page.waitForTimeout}
+   * @since 0.4.0
+   */
+  readonly waitForTimeout: (
+    timeout: number,
   ) => Effect.Effect<void, PlaywrightError>;
   /**
    * This setting will change the default maximum navigation time for the following methods:
@@ -426,7 +453,7 @@ export interface PlaywrightPageService {
   readonly locator: (
     selector: string,
     options?: Parameters<Page["locator"]>[1],
-  ) => typeof PlaywrightLocator.Service;
+  ) => PlaywrightLocator["Service"];
   /**
    * Returns a locator that matches the given role.
    *
@@ -436,7 +463,7 @@ export interface PlaywrightPageService {
   readonly getByRole: (
     role: Parameters<Page["getByRole"]>[0],
     options?: Parameters<Page["getByRole"]>[1],
-  ) => typeof PlaywrightLocator.Service;
+  ) => PlaywrightLocator["Service"];
   /**
    * Returns a locator that matches the given text.
    *
@@ -446,7 +473,7 @@ export interface PlaywrightPageService {
   readonly getByText: (
     text: Parameters<Page["getByText"]>[0],
     options?: Parameters<Page["getByText"]>[1],
-  ) => typeof PlaywrightLocator.Service;
+  ) => PlaywrightLocator["Service"];
   /**
    * Returns a locator that matches the given label.
    *
@@ -456,7 +483,7 @@ export interface PlaywrightPageService {
   readonly getByLabel: (
     label: Parameters<Page["getByLabel"]>[0],
     options?: Parameters<Page["getByLabel"]>[1],
-  ) => typeof PlaywrightLocator.Service;
+  ) => PlaywrightLocator["Service"];
   /**
    * Returns a locator that matches the given test id.
    *
@@ -465,7 +492,7 @@ export interface PlaywrightPageService {
    */
   readonly getByTestId: (
     testId: Parameters<Page["getByTestId"]>[0],
-  ) => typeof PlaywrightLocator.Service;
+  ) => PlaywrightLocator["Service"];
   /**
    * Returns a locator that matches the given alt text.
    *
@@ -475,7 +502,7 @@ export interface PlaywrightPageService {
   readonly getByAltText: (
     text: Parameters<Page["getByAltText"]>[0],
     options?: Parameters<Page["getByAltText"]>[1],
-  ) => typeof PlaywrightLocator.Service;
+  ) => PlaywrightLocator["Service"];
   /**
    * Returns a locator that matches the given placeholder.
    *
@@ -485,7 +512,7 @@ export interface PlaywrightPageService {
   readonly getByPlaceholder: (
     text: Parameters<Page["getByPlaceholder"]>[0],
     options?: Parameters<Page["getByPlaceholder"]>[1],
-  ) => typeof PlaywrightLocator.Service;
+  ) => PlaywrightLocator["Service"];
   /**
    * Returns a locator that matches the given title.
    *
@@ -495,7 +522,7 @@ export interface PlaywrightPageService {
   readonly getByTitle: (
     text: Parameters<Page["getByTitle"]>[0],
     options?: Parameters<Page["getByTitle"]>[1],
-  ) => typeof PlaywrightLocator.Service;
+  ) => PlaywrightLocator["Service"];
 
   /**
    * Captures a screenshot of the page.
@@ -662,33 +689,99 @@ export interface PlaywrightPageService {
   readonly url: () => string;
 
   /**
+   * Clears all highlights.
+   *
+   * @see {@link Page.hideHighlight}
+   * @since 0.5.0
+   */
+  readonly hideHighlight: Effect.Effect<void, PlaywrightError>;
+
+  /**
+   * Clears stored console messages.
+   *
+   * @see {@link Page.clearConsoleMessages}
+   * @since 0.5.0
+   */
+  readonly clearConsoleMessages: Effect.Effect<void, PlaywrightError>;
+
+  /**
+   * Clears stored page errors.
+   *
+   * @see {@link Page.clearPageErrors}
+   * @since 0.5.0
+   */
+  readonly clearPageErrors: Effect.Effect<void, PlaywrightError>;
+
+  /**
    * Returns all messages that have been logged to the console.
    *
    * @example
    * ```ts
-   * const consoleMessages = yield* page.consoleMessages;
+   * const consoleMessages = yield* page.consoleMessages();
    * ```
    *
    * @see {@link Page.consoleMessages}
    * @since 0.3.0
    */
-  readonly consoleMessages: Effect.Effect<
-    ReadonlyArray<ConsoleMessage>,
-    PlaywrightError
-  >;
+  readonly consoleMessages: (
+    options?: Parameters<Page["consoleMessages"]>[0],
+  ) => Effect.Effect<ReadonlyArray<ConsoleMessage>, PlaywrightError>;
 
   /**
    * Returns all errors that have been thrown in the page.
    *
    * @example
    * ```ts
-   * const pageErrors = yield* page.pageErrors;
+   * const pageErrors = yield* page.pageErrors();
    * ```
    *
    * @see {@link Page.pageErrors}
    * @since 0.3.0
    */
-  readonly pageErrors: Effect.Effect<ReadonlyArray<Error>, PlaywrightError>;
+  readonly pageErrors: (
+    options?: Parameters<Page["pageErrors"]>[0],
+  ) => Effect.Effect<ReadonlyArray<Error>, PlaywrightError>;
+
+  /**
+   * Returns the most recent network requests from the page.
+   *
+   * @see {@link Page.requests}
+   * @since 0.5.0
+   */
+  readonly requests: Effect.Effect<
+    ReadonlyArray<PlaywrightRequest>,
+    PlaywrightError
+  >;
+
+  /**
+   * Enters an interactive mode where hovering over elements highlights them and shows the corresponding locator.
+   *
+   * @see {@link Page.pickLocator}
+   * @since 0.5.0
+   */
+  readonly pickLocator: Effect.Effect<
+    PlaywrightLocator["Service"],
+    PlaywrightError
+  >;
+
+  /**
+   * Cancels the locator picking mode.
+   *
+   * @see {@link Page.cancelPickLocator}
+   * @since 0.5.0
+   */
+  readonly cancelPickLocator: Effect.Effect<void, PlaywrightError>;
+
+  /**
+   * Captures the aria snapshot of the page.
+   *
+   * @see {@link Page.ariaSnapshot}
+   * @since 0.5.0
+   */
+  readonly ariaSnapshot: (
+    options?: Parameters<Page["ariaSnapshot"]>[0],
+  ) => Effect.Effect<string, PlaywrightError>;
+
   /**
    * Returns all workers.
    *
@@ -729,7 +822,7 @@ export interface PlaywrightPageService {
    */
   readonly frame: (
     frameSelector: Parameters<Page["frame"]>[0],
-  ) => Option.Option<typeof PlaywrightFrame.Service>;
+  ) => Option.Option<PlaywrightFrame["Service"]>;
 
   /**
    * Returns all frames attached to the page.
@@ -738,7 +831,7 @@ export interface PlaywrightPageService {
    * @since 0.2.0
    */
   readonly frames: Effect.Effect<
-    ReadonlyArray<typeof PlaywrightFrame.Service>,
+    ReadonlyArray<PlaywrightFrame["Service"]>,
     PlaywrightError
   >;
   /**
@@ -747,7 +840,7 @@ export interface PlaywrightPageService {
    * @see {@link Page.mainFrame}
    * @since 0.3.0
    */
-  readonly mainFrame: () => typeof PlaywrightFrame.Service;
+  readonly mainFrame: () => PlaywrightFrame["Service"];
   /**
    * Creates a stream of the given event from the page.
    *
@@ -768,9 +861,10 @@ export interface PlaywrightPageService {
 /**
  * @category tag
  */
-export class PlaywrightPage extends Context.Tag(
-  "effect-playwright/PlaywrightPage",
-)<PlaywrightPage, PlaywrightPageService>() {
+export class PlaywrightPage extends Context.Service<
+  PlaywrightPage,
+  PlaywrightPageService
+>()("effect-playwright/PlaywrightPage") {
   /**
    * Creates a `PlaywrightPage` from a Playwright `Page` instance.
    *
@@ -785,8 +879,10 @@ export class PlaywrightPage extends Context.Tag(
       keyboard: PlaywrightKeyboard.make(page.keyboard),
       mouse: PlaywrightMouse.make(page.mouse),
       touchscreen: PlaywrightTouchscreen.make(page.touchscreen),
+      screencast: PlaywrightScreencast.make(page.screencast),
       goto: (url, options) => use((p) => p.goto(url, options)),
       setContent: (html, options) => use((p) => p.setContent(html, options)),
+      waitForTimeout: (timeout) => use((p) => p.waitForTimeout(timeout)),
       setDefaultNavigationTimeout: (timeout) =>
         page.setDefaultNavigationTimeout(timeout),
       setDefaultTimeout: (timeout) => page.setDefaultTimeout(timeout),
@@ -794,7 +890,7 @@ export class PlaywrightPage extends Context.Tag(
         use((p) => p.setExtraHTTPHeaders(headers)),
       setViewportSize: (viewportSize) =>
         use((p) => p.setViewportSize(viewportSize)),
-      viewportSize: () => Option.fromNullable(page.viewportSize()),
+      viewportSize: () => Option.fromNullishOr(page.viewportSize()),
       waitForURL: (url, options) => use((p) => p.waitForURL(url, options)),
       waitForLoadState: (state, options) =>
         use((p) => p.waitForLoadState(state, options)),
@@ -809,8 +905,8 @@ export class PlaywrightPage extends Context.Tag(
         name: string,
         effectFn: (...args: Args) => Effect.Effect<A, E, R>,
       ) =>
-        Effect.runtime<R>().pipe(
-          Effect.map((r) => Runtime.runPromise(r)),
+        Effect.context<R>().pipe(
+          Effect.map((services) => Effect.runPromiseWith(services)),
           Effect.flatMap((runPromise) =>
             use((p) =>
               p.exposeFunction(name, (...args: Args) =>
@@ -820,8 +916,8 @@ export class PlaywrightPage extends Context.Tag(
           ),
         ),
       exposeEffect: <A, E, R>(name: string, effectFn: Effect.Effect<A, E, R>) =>
-        Effect.runtime<R>().pipe(
-          Effect.map((r) => Runtime.runPromise(r)),
+        Effect.context<R>().pipe(
+          Effect.map((services) => Effect.runPromiseWith(services)),
           Effect.flatMap((runPromise) =>
             use((p) => p.exposeFunction(name, () => runPromise(effectFn))),
           ),
@@ -842,17 +938,25 @@ export class PlaywrightPage extends Context.Tag(
       getByTitle: (text, options) =>
         PlaywrightLocator.make(page.getByTitle(text, options)),
       url: () => page.url(),
+      hideHighlight: use((p) => p.hideHighlight()),
+      clearConsoleMessages: use((p) => p.clearConsoleMessages()),
+      clearPageErrors: use((p) => p.clearPageErrors()),
+      consoleMessages: (options) => use((p) => p.consoleMessages(options)),
+      pageErrors: (options) => use((p) => p.pageErrors(options)),
+      requests: use((p) => p.requests()).pipe(
+        Effect.map(Array.map(PlaywrightRequest.make)),
+      ),
+      pickLocator: use((p) => p.pickLocator().then(PlaywrightLocator.make)),
+      cancelPickLocator: use((p) => p.cancelPickLocator()),
+      ariaSnapshot: (options) => use((p) => p.ariaSnapshot(options)),
       context: () => PlaywrightBrowserContext.make(page.context()),
       opener: use((p) => p.opener()).pipe(
-        Effect.map(Option.fromNullable),
+        Effect.map(Option.fromNullishOr),
         Effect.map(Option.map(PlaywrightPage.make)),
       ),
-      consoleMessages: use((p) => p.consoleMessages()),
-      pageErrors: use((p) => p.pageErrors()),
       workers: () => page.workers().map(PlaywrightWorker.make),
-
       frame: (frameSelector) =>
-        Option.fromNullable(page.frame(frameSelector)).pipe(
+        Option.fromNullishOr(page.frame(frameSelector)).pipe(
           Option.map(PlaywrightFrame.make),
         ),
       frames: use((p) => Promise.resolve(p.frames().map(PlaywrightFrame.make))),
@@ -860,12 +964,12 @@ export class PlaywrightPage extends Context.Tag(
       reload: use((p) => p.reload()),
       goBack: (options) =>
         use((p) => p.goBack(options)).pipe(
-          Effect.map(Option.fromNullable),
+          Effect.map(Option.fromNullishOr),
           Effect.map(Option.map(PlaywrightResponse.make)),
         ),
       goForward: (options) =>
         use((p) => p.goForward(options)).pipe(
-          Effect.map(Option.fromNullable),
+          Effect.map(Option.fromNullishOr),
           Effect.map(Option.map(PlaywrightResponse.make)),
         ),
       requestGC: use((p) => p.requestGC()),
@@ -879,20 +983,23 @@ export class PlaywrightPage extends Context.Tag(
         use((p) => p.dragAndDrop(source, target, options)),
       click: (selector, options) => use((p) => p.click(selector, options)),
       emulateMedia: (options) => use((p) => p.emulateMedia(options)),
-      eventStream: <K extends keyof PageEvents>(event: K) =>
-        Stream.asyncPush<PageEvents[K]>((emit) =>
-          Effect.acquireRelease(
+      eventStream: <K extends keyof typeof eventMappings>(event: K) =>
+        Stream.callback<PageEvents[K]>((queue) => {
+          const handler = (value: PageEvents[K]) =>
+            Queue.offerUnsafe(queue, value);
+          const closeHandler = () => Queue.endUnsafe(queue);
+          return Effect.acquireRelease(
             Effect.sync(() => {
-              page.on(event, emit.single);
-              page.once("close", emit.end);
+              page.on(event, handler);
+              page.once("close", closeHandler);
             }),
             () =>
               Effect.sync(() => {
-                page.off(event, emit.single);
-                page.off("close", emit.end);
+                page.off(event, handler);
+                page.off("close", closeHandler);
               }),
-          ),
-        ).pipe(
+          );
+        }).pipe(
           Stream.map((e) => {
             const mapping = eventMappings[event];
             // biome-ignore lint/suspicious/noExplicitAny: Don't know how to fix this …

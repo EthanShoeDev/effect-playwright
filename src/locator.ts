@@ -353,7 +353,36 @@ export interface PlaywrightLocatorService {
    * @see {@link Locator.highlight}
    * @since 0.4.1
    */
-  readonly highlight: () => Effect.Effect<void, PlaywrightError>;
+  readonly highlight: (
+    options?: Parameters<Locator["highlight"]>[0],
+  ) => Effect.Effect<void, PlaywrightError>;
+  /**
+   * Hides the element highlight previously added by highlight.
+   *
+   * @see {@link Locator.hideHighlight}
+   * @since 0.5.0
+   */
+  readonly hideHighlight: Effect.Effect<void, PlaywrightError>;
+  /**
+   * Drops the locator.
+   *
+   * @see {@link Locator.drop}
+   * @since 0.5.0
+   */
+  readonly drop: (
+    data: Parameters<Locator["drop"]>[0],
+    options?: Parameters<Locator["drop"]>[1],
+  ) => Effect.Effect<void, PlaywrightError>;
+  /**
+   * Normalizes the locator.
+   *
+   * @see {@link Locator.normalize}
+   * @since 0.5.0
+   */
+  readonly normalize: () => Effect.Effect<
+    PlaywrightLocatorService,
+    PlaywrightError
+  >;
   /**
    * Captures a screenshot of the element.
    *
@@ -477,7 +506,7 @@ export interface PlaywrightLocatorService {
    * @see {@link Locator.page}
    * @since 0.4.1
    */
-  readonly page: () => typeof PlaywrightPage.Service;
+  readonly page: () => PlaywrightPage["Service"];
   /**
    * Removes keyboard focus from the current element.
    *
@@ -655,9 +684,10 @@ export interface PlaywrightLocatorService {
  * @since 0.1.0
  * @category tag
  */
-export class PlaywrightLocator extends Context.Tag(
-  "effect-playwright/PlaywrightLocator",
-)<PlaywrightLocator, PlaywrightLocatorService>() {
+export class PlaywrightLocator extends Context.Service<
+  PlaywrightLocator,
+  PlaywrightLocatorService
+>()("effect-playwright/PlaywrightLocator") {
   /**
    * Creates a `PlaywrightLocator` from a Playwright `Locator` instance. This is mostly for internal use.
    * But you could use this if you have used `use` or similar to wrap the locator.
@@ -672,7 +702,7 @@ export class PlaywrightLocator extends Context.Tag(
    * @since 0.1.0
    * @category constructor
    */
-  static make(locator: Locator): typeof PlaywrightLocator.Service {
+  static make(locator: Locator): PlaywrightLocator["Service"] {
     const use = useHelper(locator);
     const unwrap = Match.type<Locator | PlaywrightLocatorService>().pipe(
       Match.when(Predicate.hasProperty("_raw"), (l) => l._raw),
@@ -695,11 +725,11 @@ export class PlaywrightLocator extends Context.Tag(
       ariaSnapshot: (options) => use((l) => l.ariaSnapshot(options)),
       boundingBox: (options) =>
         use((l) => l.boundingBox(options)).pipe(
-          Effect.map(Option.fromNullable),
+          Effect.map(Option.fromNullishOr),
         ),
       describe: (description) =>
         PlaywrightLocator.make(locator.describe(description)),
-      description: () => Option.fromNullable(locator.description()),
+      description: () => Option.fromNullishOr(locator.description()),
       count: use((l) => l.count()),
       first: () => PlaywrightLocator.make(locator.first()),
       last: () => PlaywrightLocator.make(locator.last()),
@@ -769,7 +799,7 @@ export class PlaywrightLocator extends Context.Tag(
       ) => use((l) => l.evaluateHandle(pageFunction, arg as Arg)),
       elementHandle: (options) =>
         use((l) => l.elementHandle(options)).pipe(
-          Effect.map(Option.fromNullable),
+          Effect.map(Option.fromNullishOr),
         ),
       elementHandles: () =>
         use(
@@ -778,7 +808,10 @@ export class PlaywrightLocator extends Context.Tag(
               Array<ElementHandle<SVGElement | HTMLElement>>
             >,
         ),
-      highlight: () => use((l) => l.highlight()),
+      highlight: (options) => use((l) => l.highlight(options)),
+      hideHighlight: use((l) => l.hideHighlight()),
+      drop: (data, options) => use((l) => l.drop(data, options)),
+      normalize: () => use((l) => l.normalize().then(PlaywrightLocator.make)),
       screenshot: (options) => use((l) => l.screenshot(options)),
       blur: (options) => use((l) => l.blur(options)),
       clear: (options) => use((l) => l.clear(options)),

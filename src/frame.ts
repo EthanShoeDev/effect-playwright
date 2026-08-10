@@ -1,7 +1,8 @@
-import { Context, type Effect } from "effect";
+import { Array, Context, type Effect, Option } from "effect";
 import type { Frame } from "playwright-core";
 import type { PlaywrightError } from "./errors";
 import { PlaywrightLocator } from "./locator";
+import { PlaywrightPage, type PlaywrightPageService } from "./page";
 import type { PageFunction } from "./playwright-types";
 import { useHelper } from "./utils";
 
@@ -78,7 +79,7 @@ export interface PlaywrightFrameService {
   readonly locator: (
     selector: string,
     options?: Parameters<Frame["locator"]>[1],
-  ) => typeof PlaywrightLocator.Service;
+  ) => PlaywrightLocator["Service"];
   /**
    * Returns a locator that matches the given role.
    *
@@ -88,7 +89,7 @@ export interface PlaywrightFrameService {
   readonly getByRole: (
     role: Parameters<Frame["getByRole"]>[0],
     options?: Parameters<Frame["getByRole"]>[1],
-  ) => typeof PlaywrightLocator.Service;
+  ) => PlaywrightLocator["Service"];
   /**
    * Returns a locator that matches the given text.
    *
@@ -98,7 +99,7 @@ export interface PlaywrightFrameService {
   readonly getByText: (
     text: Parameters<Frame["getByText"]>[0],
     options?: Parameters<Frame["getByText"]>[1],
-  ) => typeof PlaywrightLocator.Service;
+  ) => PlaywrightLocator["Service"];
   /**
    * Returns a locator that matches the given label.
    *
@@ -108,7 +109,7 @@ export interface PlaywrightFrameService {
   readonly getByLabel: (
     label: Parameters<Frame["getByLabel"]>[0],
     options?: Parameters<Frame["getByLabel"]>[1],
-  ) => typeof PlaywrightLocator.Service;
+  ) => PlaywrightLocator["Service"];
   /**
    * Returns a locator that matches the given test id.
    *
@@ -117,7 +118,93 @@ export interface PlaywrightFrameService {
    */
   readonly getByTestId: (
     testId: Parameters<Frame["getByTestId"]>[0],
-  ) => typeof PlaywrightLocator.Service;
+  ) => PlaywrightLocator["Service"];
+
+  /**
+   * Returns a locator that matches the given placeholder.
+   *
+   * @see {@link Frame.getByPlaceholder}
+   * @since 0.4.1
+   */
+  readonly getByPlaceholder: (
+    text: Parameters<Frame["getByPlaceholder"]>[0],
+    options?: Parameters<Frame["getByPlaceholder"]>[1],
+  ) => PlaywrightLocator["Service"];
+
+  /**
+   * Returns a locator that matches the given alt text.
+   *
+   * @see {@link Frame.getByAltText}
+   * @since 0.4.1
+   */
+  readonly getByAltText: (
+    text: Parameters<Frame["getByAltText"]>[0],
+    options?: Parameters<Frame["getByAltText"]>[1],
+  ) => PlaywrightLocator["Service"];
+
+  /**
+   * Returns a locator that matches the given title.
+   *
+   * @see {@link Frame.getByTitle}
+   * @since 0.4.1
+   */
+  readonly getByTitle: (
+    text: Parameters<Frame["getByTitle"]>[0],
+    options?: Parameters<Frame["getByTitle"]>[1],
+  ) => PlaywrightLocator["Service"];
+
+  /**
+   * Returns the page that the frame belongs to.
+   *
+   * @see {@link Frame.page}
+   * @since 0.4.1
+   */
+  readonly page: () => PlaywrightPageService;
+
+  /**
+   * Returns the parent frame, if any.
+   *
+   * @see {@link Frame.parentFrame}
+   * @since 0.4.1
+   */
+  readonly parentFrame: () => Option.Option<PlaywrightFrameService>;
+
+  /**
+   * Returns an array of child frames.
+   *
+   * @see {@link Frame.childFrames}
+   * @since 0.4.1
+   */
+  readonly childFrames: () => ReadonlyArray<PlaywrightFrameService>;
+
+  /**
+   * Returns whether the frame is detached.
+   *
+   * @see {@link Frame.isDetached}
+   * @since 0.4.1
+   */
+  readonly isDetached: () => boolean;
+
+  /**
+   * Waits for the given timeout in milliseconds.
+   *
+   * @see {@link Frame.waitForTimeout}
+   * @since 0.4.1
+   */
+  readonly waitForTimeout: (
+    timeout: number,
+  ) => Effect.Effect<void, PlaywrightError>;
+
+  /**
+   * Sets the HTML content of the frame.
+   *
+   * @see {@link Frame.setContent}
+   * @since 0.4.1
+   */
+  readonly setContent: (
+    html: string,
+    options?: Parameters<Frame["setContent"]>[1],
+  ) => Effect.Effect<void, PlaywrightError>;
 
   /**
    * Returns the current URL of the frame.
@@ -161,9 +248,10 @@ export interface PlaywrightFrameService {
  * @category tag
  * @since 0.1.2
  */
-export class PlaywrightFrame extends Context.Tag(
-  "effect-playwright/PlaywrightFrame",
-)<PlaywrightFrame, PlaywrightFrameService>() {
+export class PlaywrightFrame extends Context.Service<
+  PlaywrightFrame,
+  PlaywrightFrameService
+>()("effect-playwright/PlaywrightFrame") {
   /**
    * Creates a `PlaywrightFrame` from a Playwright `Frame` instance.
    *
@@ -192,6 +280,22 @@ export class PlaywrightFrame extends Context.Tag(
         PlaywrightLocator.make(frame.getByLabel(label, options)),
       getByTestId: (testId) =>
         PlaywrightLocator.make(frame.getByTestId(testId)),
+      getByPlaceholder: (text, options) =>
+        PlaywrightLocator.make(frame.getByPlaceholder(text, options)),
+      getByAltText: (text, options) =>
+        PlaywrightLocator.make(frame.getByAltText(text, options)),
+      getByTitle: (text, options) =>
+        PlaywrightLocator.make(frame.getByTitle(text, options)),
+      page: () => PlaywrightPage.make(frame.page()),
+      parentFrame: () =>
+        Option.fromNullishOr(frame.parentFrame()).pipe(
+          Option.map(PlaywrightFrame.make),
+        ),
+      childFrames: () =>
+        Array.map(frame.childFrames(), (f) => PlaywrightFrame.make(f)),
+      isDetached: () => frame.isDetached(),
+      waitForTimeout: (timeout) => use((f) => f.waitForTimeout(timeout)),
+      setContent: (html, options) => use((f) => f.setContent(html, options)),
       url: () => frame.url(),
       content: use((f) => f.content()),
       name: () => frame.name(),
